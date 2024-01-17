@@ -1,0 +1,8 @@
+build/
+*.asv
+.vscode/
+input_matrices*
+*.csv
+*.mat
+output_matrices*
+octave-workspace
