@@ -22,12 +22,15 @@ function status = generateDataset(rel_input_path, dims, n, N, N_test, varargin)
 
     % Creating train dataset
     if nargin > 5
+        % If the one-dimensional locations are given, create their
+        % combinations in dims dimensions
         x_train_1D = varargin{1};
         if size(x_train_1D, 2) ~= dims
             error("The number of columns of x_train_1D must be equal to dims");
         end
         cell_x_train = mat2cell(x_train_1D, N, ones(1, dims));
     else
+        % Otherwise, choose the interval -pi/2 <--> pi/2
         x_train_1D = linspace(-pi/2, pi/2, N);
         [cell_x_train{1:dims}] = deal(x_train_1D);
     end
@@ -37,12 +40,15 @@ function status = generateDataset(rel_input_path, dims, n, N, N_test, varargin)
     
     % Creating test dataset
     if nargin > 6
+        % If the one-dimensional locations are given, create their
+        % combinations in dims dimensions
         x_test_1D = varargin{2};
         if size(x_train_1D, 2) ~= dims
             error("The number of columns of x_train_1D must be equal to dims");
         end
         cell_x_test = mat2cell(x_test_1D, N_test, ones(1, dims));
     else
+        % Otherwise, choose the interval -pi/2 <--> pi/2
         x_test_1D = linspace(-pi/2, pi/2, N_test);
         [cell_x_test{1:dims}] = deal(x_test_1D);
     end

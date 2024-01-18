@@ -13,15 +13,15 @@ find_package(OpenMP)
 find_package(Eigen3 3.4.0 REQUIRED NO_MODULE)
 find_package(Python3 REQUIRED)
 
-include_directories(include/ 
+include_directories(include/
                     ${Eigen3_DIR}
                     ${PYTHON_INCLUDE_DIRS})
 
 link_directories(${EIGEN_LIBRARY_DIRS})
 add_definitions(${EIGEN_DEFINITIONS})
 
-add_executable(gp_cpu GP_nD_CPU.cpp)
-add_executable(gp_gpu GP_nD_GPU.cu cuLinearSolver.cu cuFAGPutils.cu)
+add_executable(gp_cpu src/GP_nD_CPU.cpp)
+add_executable(gp_gpu src/GP_nD_GPU.cu src/cuLinearSolver.cu src/cuFAGPutils.cu)
 
 get_target_property(MAIN_CFLAGS gp_gpu COMPILE_OPTIONS)
 

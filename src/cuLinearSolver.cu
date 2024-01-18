@@ -51,17 +51,16 @@
 
 using namespace Eigen;
 
-int cuLinearSolver( double *d_A, // Device address of matrix A 
-                    const int64_t n,   // rows of A (square matrix)
-                    double *d_B, // Device address of matrix B and output of solution
-                    const int64_t nrhs // cols of B
+int cuLinearSolver( double *d_A,        // Device address of matrix A 
+                    const int64_t n,    // rows of A (square matrix)
+                    double *d_B,        // Device address of matrix B and output of solution
+                    const int64_t nrhs  // cols of B
                     )
 {
     cusolverDnHandle_t cusolverH = NULL;
 
     using data_type = double;
 
-    const int64_t m = n;
     const int64_t lda = n;
     const int64_t ldb = n;
     Vector<int64_t, -1> Ipiv(n);

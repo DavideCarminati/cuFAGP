@@ -27,6 +27,9 @@ using namespace Eigen;
 
 bool verbose = false;
 
+/**
+ * Load .csv files and save the content into an Eigen3 matrix
+*/
 template<typename M>
 M load_csv (const std::string & path) {
     std::ifstream indata;
@@ -45,6 +48,9 @@ M load_csv (const std::string & path) {
     return Map<const Matrix<typename M::Scalar, M::RowsAtCompileTime, M::ColsAtCompileTime, RowMajor>>(values.data(), rows, values.size()/rows);
 }
 
+/**
+ * Compute the eigenvectors and store them in the matrix Φ
+*/
 void eigenFunction( const MatrixXd &X, 
                     const MatrixXi &eigenvalue_combination, 
                     const double &epsilon, 
@@ -73,6 +79,9 @@ void eigenFunction( const MatrixXd &X,
     }
 }
 
+/**
+ * Compute eigenvalues and store them is a vector
+*/
 void eigenValues(   const MatrixXi &eigenvalue_combination, 
                     const double &epsilon, 
                     const double &alpha,
@@ -98,40 +107,6 @@ void eigenValues(   const MatrixXi &eigenvalue_combination,
     }
     return;
 }
-
-// void approximateKernel( const MatrixXd &X, 
-//                         const MatrixXd &X_test,
-//                         const int num_eigs,
-//                         const MatrixXi &eig_comb, 
-//                         const double &epsilon, 
-//                         const double &alpha,
-//                         MatrixXd &K_approx,
-//                         MatrixXd &Ks_approx,
-//                         MatrixXd &Kss_approx,
-//                         MatrixXd &Lambda,
-//                         MatrixXd &inv_Lambda,
-//                         MatrixXd &Phi,
-//                         MatrixXd &Phip)
-// {
-//     Phi = eigenFunction(x.col(0), eig_comb.col(0), epsilon, alpha).array() * eigenFunction(x.col(1), eig_comb.col(1), epsilon, alpha).array();      // Phi
-//     MatrixXd Phi, Phip;
-//     eigenFunction(X, eig_comb, epsilon, alpha, Phi);
-//     eigenFunction(X_test, eig_comb, epsilon, alpha, Phip);
-//     Phip = eigenFunction(xp.col(0), eig_comb.col(0), epsilon, alpha).array() * eigenFunction(xp.col(1), eig_comb.col(1), epsilon, alpha).array();    // Phi prime
-//     VectorXd lambdas = eigenValues(eig_comb.col(0), epsilon, alpha).array() * eigenValues(eig_comb.col(1), epsilon, alpha).array();
-//     Lambda.resize(num_eigs,num_eigs); // CHECK THIS SIZE!
-//     inv_Lambda.resize(num_eigs,num_eigs);
-//     Lambda = lambdas.asDiagonal();
-//     // std::cout << Lambda;
-//     VectorXd inv_lambdas = (1 / lambdas.array()).matrix();
-//     inv_Lambda = inv_lambdas.asDiagonal();
-//     // Computing approximated kernels
-//     K_approx = Phi * Lambda * Phi.transpose();
-//     Ks_approx = Phip * Lambda * Phi.transpose();
-//     Kss_approx = Phip * Lambda * Phip.transpose();
-//     // Lambda_hat = Phi.transpose() * inv_SigmaN * Phi + (1 / lambdas.array()).matrix().inverse();
-
-// }
 
 int main(int argc, char* argv[])
 {
@@ -171,7 +146,7 @@ int main(int argc, char* argv[])
 
     // GP parameters
     const double l = 1;                                 // Length scale
-    const double epsilon = 1 / (sqrt(2) * l);
+    const double epsilon = 1 / (sqrt(2) * l);           // Parameter ε
     const double alpha = 0.5;                           // Global length scale
     const double sigma_n = 1/pow(1e-3, 2);              // 1/σ² inverse of noise variance
     const double minus_sigma_n2 = -1 / pow(1e-3, 4);    // (1/σ²)² square of inverse of noise variance
@@ -179,6 +154,7 @@ int main(int argc, char* argv[])
 
     std::cout << "Executing on CPU...\n";
     auto cpu_start = std::chrono::steady_clock::now();
+
     // Compute eigenfunctions and eigenvalues
     MatrixXd K_app, Ks_app, Kss_app, Phi, Phip, Phi_T;
     VectorXd Lambda_vec, inv_Lambda_vec;
@@ -223,7 +199,7 @@ int main(int argc, char* argv[])
 
     std::ofstream logs(rel_log_path + "log_cpu.csv", std::ios_base::app);
     if (logs_new) logs << "elapsed_ms, N, N_test, dims, n, date_time\n";
-    logs << elapsed_time_cpu << ", " << N << ", " << N_test << ", " << p << ", " << n << ", " << std::ctime(&date_and_time);// << std::endl;
+    logs << elapsed_time_cpu << ", " << N << ", " << N_test << ", " << p << ", " << n << ", " << std::ctime(&date_and_time);
 
     std::ofstream file_x_train(rel_output_path + "x_train.csv");
     file_x_train << x_train.format(CSVFormat);

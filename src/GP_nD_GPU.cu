@@ -30,7 +30,9 @@ using namespace Eigen;
 
 bool verbose = false;
 
-
+/**
+ * Load .csv files and save the content into an Eigen3 matrix
+*/
 template<typename M>
 M load_csv (const std::string & path) {
     std::ifstream indata;
@@ -92,7 +94,7 @@ int main(int argc, char* argv[])
 
     // GP parameters
     const double l = 1;                                 // Length scale
-    const double epsilon = 1 / (sqrt(2) * l);
+    const double epsilon = 1 / (sqrt(2) * l);           // Parameter ε
     const double alpha = 0.5;                           // Global length scale
     const double sigma_n = 1/pow(1e-3, 2);              // 1/σ² inverse of noise variance
     const double minus_sigma_n2 = -1 / pow(1e-3, 4);    // (1/σ²)² square of inverse of noise variance
@@ -102,58 +104,44 @@ int main(int argc, char* argv[])
      * USING GPU FOR COMPUTATION
     */
 
-    // TODO: Use sparse Lambda and inv_Lambda
-    // TODO: move malloc at the lines in which is actually needed
-
     std::cout << "Executing on GPU...\n";
     auto gpu_start = std::chrono::steady_clock::now();
 
     // Allocate device memory
     double *dev_x_train, *dev_x_test, *dev_y_train;                                         // Datasets
-    double *dev_l, *dev_epsilon, *dev_alpha, *dev_sigma_n, *dev_minus_sigma_n;              // Hyperparameters
-    double *dev_Phi, *dev_Phip, *dev_Lambda, *dev_diag_Lambda, /**dev_inv_Lambda,*/ *dev_diag_inv_Lambda, *dev_identity, *dev_Phi_T, *dev_lambdas, *dev_Lambda_hat;
+    // double *dev_l, *dev_epsilon, *dev_alpha, *dev_sigma_n, *dev_minus_sigma_n;              // Hyperparameters
+    double *dev_Phi, *dev_Phip, *dev_Lambda, *dev_diag_Lambda, *dev_diag_inv_Lambda, 
+                *dev_identity, *dev_Phi_T, *dev_lambdas, *dev_Lambda_hat;
     int *dev_eig_comb;
     CUDA_CHECK(cudaMalloc((void**)&dev_x_train, sizeof(double) * x_train.size()));
     CUDA_CHECK(cudaMalloc((void**)&dev_x_test, sizeof(double) * x_test.size()));
-    // CUDA_CHECK(cudaMalloc((void**)&dev_y_train, sizeof(double) * N));
 
-    CUDA_CHECK(cudaMalloc((void**)&dev_l, sizeof(double)));
-    CUDA_CHECK(cudaMalloc((void**)&dev_epsilon, sizeof(double)));
-    CUDA_CHECK(cudaMalloc((void**)&dev_alpha, sizeof(double)));
-    CUDA_CHECK(cudaMalloc((void**)&dev_sigma_n, sizeof(sigma_n)));
-    CUDA_CHECK(cudaMalloc((void**)&dev_minus_sigma_n, sizeof(sigma_n)));
+    // CUDA_CHECK(cudaMalloc((void**)&dev_l, sizeof(double)));
+    // CUDA_CHECK(cudaMalloc((void**)&dev_epsilon, sizeof(double)));
+    // CUDA_CHECK(cudaMalloc((void**)&dev_alpha, sizeof(double)));
+    // CUDA_CHECK(cudaMalloc((void**)&dev_sigma_n, sizeof(sigma_n)));
+    // CUDA_CHECK(cudaMalloc((void**)&dev_minus_sigma_n, sizeof(sigma_n)));
 
     CUDA_CHECK(cudaMalloc((void**)&dev_eig_comb, sizeof(int) * np * p));
     CUDA_CHECK(cudaMalloc((void**)&dev_Phi, sizeof(double) * N * pow(n, p)));
     CUDA_CHECK(cudaMalloc((void**)&dev_Phip, sizeof(double) * N_test * np));
     CUDA_CHECK(cudaMalloc((void**)&dev_diag_Lambda, sizeof(double) * np));
     CUDA_CHECK(cudaMalloc((void**)&dev_diag_inv_Lambda, sizeof(double) * np));
-    // CUDA_CHECK(cudaMalloc((void**)&dev_identity, sizeof(double) * identity.size()));
-    // CUDA_CHECK(cudaMalloc((void**)&dev_Phi_T, sizeof(double) * N * pow(n, p)));
-    // CUDA_CHECK(cudaMalloc((void**)&dev_lambdas, sizeof(double) * np));
+
     // Results
     double *dev_y_star;
     CUDA_CHECK(cudaMalloc((void**)&dev_y_star, sizeof(double) * N_test));
 
     // Allocating temporary variables for the computation of W
     double *dev_tmp_W1, *dev_tmp_W2;
-    // CUDA_CHECK(cudaMalloc((void**)&dev_tmp_W1, sizeof(double) * N * np));
-    // CUDA_CHECK(cudaMalloc((void**)&dev_tmp_W2, sizeof(double) * N * N));
     // Allocating temporary variables for the computation of Phip * Lambda * Phi
     double *dev_tmp_Kstar, *dev_Kstar;
-    // CUDA_CHECK(cudaMalloc((void**)&dev_tmp_Kstar, sizeof(double) * N * np));
-    // CUDA_CHECK(cudaMalloc((void**)&dev_Kstar, sizeof(double) * N_test * N));
     double *dev_W;
-    // CUDA_CHECK(cudaMalloc((void**)&dev_W, sizeof(double) * N_test * N));
 
     CUDA_CHECK(cudaMemcpy(dev_x_train, x_train.data(), sizeof(double) * x_train.size(), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(dev_x_test, x_test.data(), sizeof(double) * x_test.size(), cudaMemcpyHostToDevice));
-    // CUDA_CHECK(cudaMemcpy(dev_y_train, y_train.data(), sizeof(double) * y_train.size(), cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(dev_sigma_n, &sigma_n, sizeof(double), cudaMemcpyHostToDevice));
+    // CUDA_CHECK(cudaMemcpy(dev_sigma_n, &sigma_n, sizeof(double), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(dev_eig_comb, eig_comb.data(), sizeof(int) * eig_comb.size(), cudaMemcpyHostToDevice));
-    // CUDA_CHECK(cudaMemcpy(dev_identity, identity.data(), sizeof(double) * identity.size(), cudaMemcpyHostToDevice));
-
-    // CUDA_CHECK(cudaMemcpy(dev_tmp_W2, identity.data(), sizeof(double) * N * N, cudaMemcpyHostToDevice));
 
     cublasHandle_t handle;
     cublasCreate(&handle);
@@ -164,8 +152,7 @@ int main(int argc, char* argv[])
     const double one = 1.0, zero = 0.0;
     const int incx = 1;
     const int incy = 1;
-    // int block_size = 256;
-    // int grid_size = ((N + block_size) / block_size);
+
     dim3 block_size(16, 64);
     dim3 grid_size;
     grid_size.x = (np + block_size.x - 1) / block_size.x;
@@ -179,10 +166,9 @@ int main(int argc, char* argv[])
     double delta = alpha * alpha / 2 * (beta * beta - 1);
 
     // Compute eigenvectors and eigenvalue of the square exponential kernel decomposition
-    // eigenFunction<<<grid_size, block_size>>>(dev_x_train, N, p, dev_eig_comb, np, epsilon, alpha, beta, delta, dev_Phi, dev_Phi_T);
-    eigenFunction<<<grid_size, block_size>>>(dev_x_train, N, p, dev_eig_comb, np, epsilon, alpha, beta, delta, dev_Phi, nullptr);
-    eigenFunction<<<grid_size, block_size>>>(dev_x_test, N_test, p, dev_eig_comb, np, epsilon, alpha, beta, delta, dev_Phip, nullptr);
-    eigenValues_sparse<<<grid_size, block_size>>>(dev_eig_comb, np, p, epsilon, alpha, beta, delta, dev_diag_Lambda, dev_diag_inv_Lambda);
+    eigenFunction<<<grid_size, block_size>>>(dev_x_train, N, p, dev_eig_comb, np, epsilon, alpha, beta, delta, dev_Phi);
+    eigenFunction<<<grid_size, block_size>>>(dev_x_test, N_test, p, dev_eig_comb, np, epsilon, alpha, beta, delta, dev_Phip);
+    eigenValues<<<grid_size, block_size>>>(dev_eig_comb, np, p, epsilon, alpha, beta, delta, dev_diag_Lambda, dev_diag_inv_Lambda);
     CUDA_CHECK(cudaFree(dev_x_train));
     CUDA_CHECK(cudaFree(dev_x_test));
     CUDA_CHECK(cudaFree(dev_eig_comb));
@@ -191,16 +177,10 @@ int main(int argc, char* argv[])
     CUDA_CHECK(cudaMalloc((void**)&dev_Lambda_hat, sizeof(double) * np * np));
     CUBLAS_CHECK(cublasDgemm(handle, CUBLAS_OP_T, CUBLAS_OP_N, np, np, N,
                     &sigma_n, dev_Phi, N, dev_Phi, N, &zero, dev_Lambda_hat, np));
-    // MatrixXd Lambda_hat(np, np);
-    // cudaMemcpy(Lambda_hat.data(), dev_Lambda_hat, sizeof(double) * np * np, cudaMemcpyDeviceToHost);
-    // std::cout << "Lambda_hat:\n" << Lambda_hat << std::endl;
 
     const int inc_diag_mat = np + 1;
     CUBLAS_CHECK(cublasDaxpy(handle, np, &one, dev_diag_inv_Lambda, incx, dev_Lambda_hat, inc_diag_mat));
     CUDA_CHECK(cudaFree(dev_diag_inv_Lambda));
-    // MatrixXd Lambda_hat_true(np, np);
-    // cudaMemcpy(Lambda_hat_true.data(), dev_Lambda_hat, sizeof(double) * np * np, cudaMemcpyDeviceToHost);
-    // std::cout << "Lambda is:\n" << Lambda_hat_true - Lambda_hat << std::endl;
 
     // Computing Lambda_hat^-1 * Phi.transpose(). Solution is stored in dev_Phi_T
     CUDA_CHECK(cudaMalloc((void**)&dev_Phi_T, sizeof(double) * N * np));
@@ -226,9 +206,9 @@ int main(int argc, char* argv[])
     CUDA_CHECK(cudaMalloc((void**)&dev_Lambda_elem_indx, sizeof(int) * np));
     CUDA_CHECK(cudaMemcpy(dev_Lambda_elem_indx, Lambda_elem_indx.data(), sizeof(int) * np, cudaMemcpyHostToDevice));
     CUSPARSE_CHECK(cusparseCreateCoo(   &Lambda, np, np, np, dev_Lambda_elem_indx, dev_Lambda_elem_indx, dev_diag_Lambda, 
-                                        CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO, CUDA_R_64F)); // MatA
-    CUSPARSE_CHECK(cusparseCreateDnMat(&Phi, N, np, N, dev_Phi, CUDA_R_64F, CUSPARSE_ORDER_COL)); // matB
-    CUSPARSE_CHECK(cusparseCreateDnMat(&tmp_Kstar, np, N, np, dev_tmp_Kstar, CUDA_R_64F, CUSPARSE_ORDER_COL)); // matC
+                                        CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO, CUDA_R_64F));
+    CUSPARSE_CHECK(cusparseCreateDnMat(&Phi, N, np, N, dev_Phi, CUDA_R_64F, CUSPARSE_ORDER_COL));
+    CUSPARSE_CHECK(cusparseCreateDnMat(&tmp_Kstar, np, N, np, dev_tmp_Kstar, CUDA_R_64F, CUSPARSE_ORDER_COL)); 
     CUSPARSE_CHECK(cusparseSpMM_bufferSize(handleSp, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_TRANSPOSE,
                                         &one, Lambda, Phi, &zero, tmp_Kstar, CUDA_R_64F, CUSPARSE_SPMM_ALG_DEFAULT, &bufferSize));
     CUDA_CHECK(cudaMalloc(&dBuffer, bufferSize));
@@ -239,32 +219,20 @@ int main(int argc, char* argv[])
     CUSPARSE_CHECK(cusparseDestroyDnMat(tmp_Kstar));
     CUSPARSE_CHECK(cusparseDestroy(handleSp));
 
-    // CUBLAS_CHECK(cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N_test, np, np, &one, dev_Phip, N_test, dev_Lambda, np, &zero, dev_tmp_Kstar, N_test));
     CUDA_CHECK(cudaFree(dev_Phi));
-    // CUDA_CHECK(cudaFree(dev_Lambda));
     CUDA_CHECK(cudaFree(dev_diag_Lambda));
-
-    // MatrixXd Kstar_tmp(N_test, np);
-    // CUDA_CHECK(cudaMemcpy(Kstar_tmp.data(), dev_tmp_Kstar, sizeof(double) * np * N_test, cudaMemcpyDeviceToHost));
 
     CUDA_CHECK(cudaMalloc((void**)&dev_Kstar, sizeof(double) * N_test * N));
     CUBLAS_CHECK(cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N_test, N, np, &one, dev_Phip, N_test, dev_tmp_Kstar, np, &zero, dev_Kstar, N_test));
     
-    // CUBLAS_CHECK(cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_T, N_test, N, np, &one, dev_tmp_Kstar, N_test, dev_Phi, N, &zero, dev_Kstar, N_test));
     CUDA_CHECK(cudaFree(dev_Phip));
     CUDA_CHECK(cudaFree(dev_tmp_Kstar));
-
-    // MatrixXd Kstar(N_test, N);
-    // CUDA_CHECK(cudaMemcpy(Kstar.data(), dev_Kstar, sizeof(double) * N * N_test, cudaMemcpyDeviceToHost));
 
     // Computing W
     CUDA_CHECK(cudaMalloc((void**)&dev_W, sizeof(double) * N_test * N));
     CUBLAS_CHECK(cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N_test, N, N, &one, dev_Kstar, N_test, dev_tmp_W2, N, &zero, dev_W, N_test));
     CUDA_CHECK(cudaFree(dev_tmp_W2));
     CUDA_CHECK(cudaFree(dev_Kstar));
-    
-    // MatrixXd W(N_test, N);
-    // CUDA_CHECK(cudaMemcpy(W.data(), dev_W, sizeof(double) * N * N_test, cudaMemcpyDeviceToHost));
 
     // Computing predictive posterior mean y_star and covariance cov_star
     CUDA_CHECK(cudaMalloc((void**)&dev_y_train, sizeof(double) * N));
