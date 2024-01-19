@@ -116,12 +116,6 @@ int main(int argc, char* argv[])
     CUDA_CHECK(cudaMalloc((void**)&dev_x_train, sizeof(double) * x_train.size()));
     CUDA_CHECK(cudaMalloc((void**)&dev_x_test, sizeof(double) * x_test.size()));
 
-    // CUDA_CHECK(cudaMalloc((void**)&dev_l, sizeof(double)));
-    // CUDA_CHECK(cudaMalloc((void**)&dev_epsilon, sizeof(double)));
-    // CUDA_CHECK(cudaMalloc((void**)&dev_alpha, sizeof(double)));
-    // CUDA_CHECK(cudaMalloc((void**)&dev_sigma_n, sizeof(sigma_n)));
-    // CUDA_CHECK(cudaMalloc((void**)&dev_minus_sigma_n, sizeof(sigma_n)));
-
     CUDA_CHECK(cudaMalloc((void**)&dev_eig_comb, sizeof(int) * np * p));
     CUDA_CHECK(cudaMalloc((void**)&dev_Phi, sizeof(double) * N * pow(n, p)));
     CUDA_CHECK(cudaMalloc((void**)&dev_Phip, sizeof(double) * N_test * np));
@@ -140,7 +134,6 @@ int main(int argc, char* argv[])
 
     CUDA_CHECK(cudaMemcpy(dev_x_train, x_train.data(), sizeof(double) * x_train.size(), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(dev_x_test, x_test.data(), sizeof(double) * x_test.size(), cudaMemcpyHostToDevice));
-    // CUDA_CHECK(cudaMemcpy(dev_sigma_n, &sigma_n, sizeof(double), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(dev_eig_comb, eig_comb.data(), sizeof(int) * eig_comb.size(), cudaMemcpyHostToDevice));
 
     cublasHandle_t handle;

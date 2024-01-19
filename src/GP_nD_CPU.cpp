@@ -62,7 +62,7 @@ void eigenFunction( const MatrixXd &X,
     const int n_dim  = eigenvalue_combination.cols();
     Phi.resize(N, n_comb);
     Phi.setOnes();
-    // #pragma omp parallel for
+    #pragma omp parallel for
     for (int ii = 0; ii < N; ii++)
     {
         for (int jj = 0; jj < n_comb; jj++)
@@ -93,7 +93,7 @@ void eigenValues(   const MatrixXi &eigenvalue_combination,
     Lambda.resize(n_comb);
     Lambda.setIdentity();
     inv_Lambda.resize(n_comb);
-    // #pragma omp parallel for
+    #pragma omp parallel for
     for (int ii = 0; ii < n_comb; ii++)
     {
         double beta = pow( 1 + pow(2 * epsilon / alpha, 2), 0.25 );
