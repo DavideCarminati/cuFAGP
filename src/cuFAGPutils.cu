@@ -48,35 +48,6 @@ void eigenFunction( double *x,
     return;
 }
 
-// __global__
-// void eigenValues(   const int *eigenvalue_comb, 
-//                     const int n_comb, 
-//                     const int n_dim, 
-//                     const double epsilon, 
-//                     const double alpha, 
-//                     double *Lambda, 
-//                     double *inv_Lambda)
-// {
-//     int tid = blockIdx.x * blockDim.x + threadIdx.x;
-//     Map<MatrixXd> Lambda_eigen(Lambda, n_comb, n_comb);
-//     Lambda_eigen.setIdentity();
-//     Map<MatrixXd> inv_Lambda_eigen(inv_Lambda, n_comb, n_comb);
-//     if (tid < n_comb)
-//     {
-//         double beta = pow( 1 + pow(2 * epsilon / alpha, 2), 0.25 );
-//         double delta = alpha * alpha / 2 * (beta * beta - 1);
-//         for (int p = 0; p < n_dim; p++)
-//         {
-//             Lambda_eigen(tid,tid) *= sqrt( alpha*alpha / (alpha*alpha + delta + epsilon*epsilon) ) \
-//                     * pow( epsilon*epsilon / (alpha*alpha + delta + epsilon*epsilon), eigenvalue_comb[tid + p * n_comb] - 1 );
-//         }
-//         inv_Lambda_eigen(tid,tid) = 1 / Lambda_eigen(tid,tid);
-        
-//     }
-//     __syncthreads();
-//     return;
-// }
-
 __global__
 void eigenValues(const int *eigenvalue_comb, 
                         const int n_comb, 

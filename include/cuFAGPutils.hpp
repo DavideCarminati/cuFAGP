@@ -33,15 +33,6 @@ void eigenFunction( double *x,
                     const double delta,
                     double *Phi_out);
 
-// __global__
-// void eigenValues(   const int *eigenvalue_comb, 
-//                     const int n_comb, 
-//                     const int n_dim, 
-//                     const double epsilon, 
-//                     const double alpha, 
-//                     double *Lambda, 
-//                     double *inv_Lambda);
-
 __global__
 void eigenValues(const int *eigenvalue_comb, 
                         const int n_comb, 
