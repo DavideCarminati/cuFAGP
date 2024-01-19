@@ -10,8 +10,7 @@ enable_testing()
 
 find_package(CUDA)
 find_package(OpenMP)
-find_package(Eigen3 3.4.0 REQUIRED NO_MODULE)
-find_package(Python3 REQUIRED)
+find_package(Eigen3 3.4 REQUIRED NO_MODULE)
 
 include_directories(include/
                     ${Eigen3_DIR}
