@@ -24,6 +24,15 @@ add_executable(gp_gpu src/GP_nD_GPU.cu src/cuLinearSolver.cu src/cuFAGPutils.cu)
 
 get_target_property(MAIN_CFLAGS gp_gpu COMPILE_OPTIONS)
 
+target_compile_options( gp_gpu PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
+                        #  --generate-line-info # for profiling
+                        --use_fast_math
+                        -gencode arch=compute_61,code=sm_61
+                        -diag-suppress 20012 # Suppressing Eigen warnings
+                        # -g
+                        # -G
+>)
+
 target_link_libraries(  gp_cpu
                         Eigen3::Eigen
                         OpenMP::OpenMP_CXX

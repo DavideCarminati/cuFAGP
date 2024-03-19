@@ -74,3 +74,23 @@ void eigenValues(const int *eigenvalue_comb,
     __syncthreads();
     return;
 }
+
+__global__
+/**
+ * Diagonal matrix - dense matrix multiplication. The function returns
+ * out_mat = mat * diag_vec.asDiagonal()
+*/
+void dmm(   double *mat,                // Input dense matrix and output result
+            const int n,                // Rows of mat
+            const double *diag_vec,     // Diagonal of the diagonal matrix
+            const int m                 // Size of diag_vec
+            )
+{
+    int tid_x = blockIdx.x * blockDim.x + threadIdx.x;
+    int tid_y = blockIdx.y * blockDim.y + threadIdx.y;
+    if (tid_x < m && tid_y < n)
+    {
+        mat[tid_y + n * tid_x] = mat[tid_y + n * tid_x] * diag_vec[tid_x];
+    }
+
+}

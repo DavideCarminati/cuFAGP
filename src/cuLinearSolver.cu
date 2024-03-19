@@ -97,13 +97,68 @@ int cuLinearSolver( double *d_A,        // Device address of matrix A
                                     d_A, lda, d_Ipiv, traits<data_type>::cuda_data_type, d_work,
                                     d_lwork, h_work, h_lwork, d_info));
 
-    CUDA_CHECK(cudaMemcpy(Ipiv.data(), d_Ipiv, sizeof(int64_t) * Ipiv.size(), cudaMemcpyDeviceToHost));
-    CUDA_CHECK(cudaMemcpy(&info, d_info, sizeof(int), cudaMemcpyDeviceToHost));
+    CUSOLVER_CHECK(cusolverDnXgetrs(cusolverH, params, CUBLAS_OP_N, n, nrhs, /* nrhs */
+                                    traits<data_type>::cuda_data_type, d_A, lda, d_Ipiv,
+                                    traits<data_type>::cuda_data_type, d_B, ldb, d_info));
 
-    if (0 > info) {
-        std::printf("%d-th parameter is wrong \n", -info);
-        exit(1);
-    }
+    CUDA_CHECK(cudaFree(d_Ipiv));
+    CUDA_CHECK(cudaFree(d_info));
+    CUDA_CHECK(cudaFree(d_work));
+
+    CUSOLVER_CHECK(cusolverDnDestroyParams(params));
+
+    CUSOLVER_CHECK(cusolverDnDestroy(cusolverH));
+
+    return EXIT_SUCCESS;
+}
+
+int cuLinearSolverAsync(double *d_A,        // Device address of matrix A 
+                        const int64_t n,    // rows of A (square matrix)
+                        double *d_B,        // Device address of matrix B and output of solution
+                        const int64_t nrhs, // cols of B
+                        cudaStream_t stream
+                        )
+{
+    cusolverDnHandle_t cusolverH;
+
+    using data_type = double;
+
+    const int64_t lda = n;
+    const int64_t ldb = n;
+    Vector<int64_t, -1> Ipiv(n);
+    int info = 0;
+
+    int64_t *d_Ipiv = nullptr; /* pivoting sequence */
+    int *d_info = nullptr;     /* error info */
+
+    size_t d_lwork = 0;     /* size of workspace */
+    void *d_work = nullptr; /* device workspace for getrf */
+    size_t h_lwork = 0;     /* size of workspace */
+    void *h_work = nullptr; /* host workspace for getrf */
+
+    /* step 1: create cusolver handle, bind a stream */
+    CUSOLVER_CHECK(cusolverDnCreate(&cusolverH));
+    CUSOLVER_CHECK(cusolverDnSetStream(cusolverH, stream));
+
+    /* Create advanced params */
+    cusolverDnParams_t params;
+    CUSOLVER_CHECK(cusolverDnCreateParams(&params));
+    CUSOLVER_CHECK(cusolverDnSetAdvOptions(params, CUSOLVERDN_GETRF, CUSOLVER_ALG_0));
+
+    CUDA_CHECK(cudaMallocAsync(reinterpret_cast<void **>(&d_Ipiv), sizeof(int64_t) * Ipiv.size(), stream));
+    CUDA_CHECK(cudaMallocAsync(reinterpret_cast<void **>(&d_info), sizeof(int), stream));
+
+    /* step 3: query working space of getrf */
+    CUSOLVER_CHECK(
+        cusolverDnXgetrf_bufferSize(cusolverH, params, n, n, traits<data_type>::cuda_data_type, d_A,
+                                    lda, traits<data_type>::cuda_data_type, &d_lwork, &h_lwork));
+
+    CUDA_CHECK(cudaMallocAsync(reinterpret_cast<void **>(&d_work), sizeof(data_type) * d_lwork, stream));
+
+    /* step 4: LU factorization */
+    CUSOLVER_CHECK(cusolverDnXgetrf(cusolverH, params, n, n, traits<data_type>::cuda_data_type,
+                                    d_A, lda, d_Ipiv, traits<data_type>::cuda_data_type, d_work,
+                                    d_lwork, h_work, h_lwork, d_info));
 
     CUSOLVER_CHECK(cusolverDnXgetrs(cusolverH, params, CUBLAS_OP_N, n, nrhs, /* nrhs */
                                     traits<data_type>::cuda_data_type, d_A, lda, d_Ipiv,

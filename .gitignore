@@ -6,3 +6,4 @@ input_matrices*
 *.mat
 output_matrices*
 octave-workspace
+logs/

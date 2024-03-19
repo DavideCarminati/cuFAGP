@@ -43,3 +43,10 @@ void eigenValues(const int *eigenvalue_comb,
                         const double delta,
                         double *Lambda, 
                         double *inv_Lambda);
+
+__global__
+void dmm(   double *mat,                // Input dense matrix and output result
+            const int n,                // Rows of mat
+            const double *diag_vec,     // Diagonal of the diagonal matrix
+            const int m                 // Size of diag_vec
+            );

@@ -15,3 +15,10 @@ int cuLinearSolver( double *d_A, // Device address of matrix A
                     double *d_B, // Device address of matrix B and output of solution
                     const int64_t nrhs // cols of B
                     );
+
+int cuLinearSolverAsync(double *d_A,        // Device address of matrix A 
+                        const int64_t n,    // rows of A (square matrix)
+                        double *d_B,        // Device address of matrix B and output of solution
+                        const int64_t nrhs, // cols of B
+                        cudaStream_t stream
+                        );

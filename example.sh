@@ -25,7 +25,7 @@ echo "Done"
 cd ..
 for d in $(printf '%s\n' input_matrices_*/ | sort -V) ; do
     printf "\n------------------------------------------\nOpening folder $d...\n------------------------------------------\n"
-    for sim in {1..10} ; do
+    for sim in {1..20} ; do
         printf "Simulation #%d\n" $sim
         build/gp_cpu $d output_matrices/ ./
         build/gp_gpu $d output_matrices/ ./

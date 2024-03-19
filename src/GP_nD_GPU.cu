@@ -127,7 +127,7 @@ int main(int argc, char* argv[])
     CUDA_CHECK(cudaMalloc((void**)&dev_y_star, sizeof(double) * N_test));
 
     // Allocating temporary variables for the computation of W
-    double *dev_tmp_W1, *dev_tmp_W2;
+    double *dev_tmp_W2;
     // Allocating temporary variables for the computation of Phip * Lambda * Phi
     double *dev_tmp_Kstar, *dev_Kstar;
     double *dev_W;
@@ -188,7 +188,7 @@ int main(int argc, char* argv[])
     CUBLAS_CHECK(cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, np, &minus_sigma_n2, dev_Phi, N, dev_Phi_T, np, &sigma_n, dev_tmp_W2, N));
     CUDA_CHECK(cudaFree(dev_Phi_T));
     
-    // This is a dense-sparse matrix multiplication
+    // Computing K_star = Phip * Lambda * Phi.transpose(). This is a dense-sparse matrix multiplication.
     CUDA_CHECK(cudaMalloc((void**)&dev_tmp_Kstar, sizeof(double) * N * np));
     cusparseSpMatDescr_t Lambda;
     cusparseDnMatDescr_t Phi, tmp_Kstar;
@@ -227,7 +227,7 @@ int main(int argc, char* argv[])
     CUDA_CHECK(cudaFree(dev_tmp_W2));
     CUDA_CHECK(cudaFree(dev_Kstar));
 
-    // Computing predictive posterior mean y_star and covariance cov_star
+    // Computing predictive posterior mean y_star
     CUDA_CHECK(cudaMalloc((void**)&dev_y_train, sizeof(double) * N));
     CUDA_CHECK(cudaMemcpy(dev_y_train, y_train.data(), sizeof(double) * y_train.size(), cudaMemcpyHostToDevice));
     CUBLAS_CHECK(cublasDgemv(handle, CUBLAS_OP_N, N_test, N, &one, dev_W, N_test, dev_y_train, incx, &zero, dev_y_star, incy));
