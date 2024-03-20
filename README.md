@@ -1,6 +1,6 @@
 # Parallel Gaussian process with kernel approximation in CUDA
 
-CUDA implementation of Gaussian process with approximated kernel. The mathematical formulation was originally presented in V. Joukov and D. Kulić (2022) (pre-print available [here](https://arxiv.org/abs/2008.09848)).
+CUDA implementation of Gaussian process with approximated kernel. The paper liked to this repo is available as a pre-print [here](https://arxiv.org/abs/2403.12797). The mathematical formulation was originally presented in V. Joukov and D. Kulić (2022) (pre-print available [here](https://arxiv.org/abs/2008.09848)).
 ### Requirements
 * `gcc` v9.4.0
 * [`CUDA` toolkit v12.2](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#pre-installation-actions)
@@ -28,3 +28,15 @@ cd ..
 source example.sh
 ```
 to replicate the results in the paper.
+
+### How to cite
+```
+@misc{carminati2024parallel,
+      title={Parallel Gaussian process with kernel approximation in CUDA}, 
+      author={Davide Carminati},
+      year={2024},
+      eprint={2403.12797},
+      archivePrefix={arXiv},
+      primaryClass={cs.DC}
+}
+```
